@@ -1,12 +1,167 @@
-from fastapi import APIRouter
+from __future__ import annotations
 
+import os
+from dataclasses import asdict
+from datetime import timedelta
+from pathlib import PurePosixPath
+from uuid import uuid4
+
+from fastapi import APIRouter, Query, HTTPException
+from pydantic import BaseModel
+
+try:
+    from google.cloud import storage
+except ImportError:  # pragma: no cover - optional dependency
+    storage = None  # type: ignore[assignment]
+
+
+# APIRouter 인스턴스 생성: 이 모듈의 라우트를 묶는 역할
 router = APIRouter()
 
 
-@router.get("/presigned-url")
-async def presigned_url():
-    """Return a dummy presigned URL and status for clients.
+# ---------------------------------------------------------------------------
+# 요청/응답 모델
+# ---------------------------------------------------------------------------
 
-    This is a placeholder endpoint for the POC.
+
+class PresignedUploadRequest(BaseModel):
+    # 클라이언트가 presign 요청 시 전달하는 메타데이터 모델
+    device_id: str
+    sequence: int
+    timestamp_ms: int
+    file_name: str
+    content_type: str
+    byte_length: int
+
+
+class PresignedUploadResponse(BaseModel):
+    # presign 응답에 포함되는 필드 모델
+    upload_url: str
+    object_path: str
+    upload_session_id: str
+    expires_in_seconds: int
+
+
+# ---------------------------------------------------------------------------
+# Presigned URL 발급 서비스 (POC용)
+# - GCS 자격증명이 있으면 실제 서명 URL 생성
+# - 없으면 테스트 가능한 fallback URL을 반환
+# ---------------------------------------------------------------------------
+
+
+class PresignedUrlService:
+    """간단한 Presigned URL 발급 서비스 (POC용).
+
+    실제 GCS 자격증명이 구성되어 있으면 서명 URL을 생성하고,
+    그렇지 않으면 테스트 가능한 디폴트 URL을 반환합니다.
     """
-    return {"url": "https://example.com/presigned/object", "status": "ok"}
+
+    def __init__(
+        self,
+        bucket_name: str | None,
+        url_expiration_seconds: int,
+        object_prefix: str,
+        project_id: str | None = None,
+        storage_client=None,
+    ) -> None:
+        # 인스턴스 설정 초기화
+        self.bucket_name = bucket_name
+        self.url_expiration_seconds = url_expiration_seconds
+        self.object_prefix = object_prefix.strip("/") if object_prefix else ""
+        self.project_id = project_id
+        # 외부에서 주입된 storage client 우선 사용
+        self.storage_client = storage_client if storage_client is not None else self._build_client()
+
+    @classmethod
+    def from_env(cls) -> "PresignedUrlService":
+        # 환경변수에서 설정을 읽어 서비스 인스턴스 생성
+        bucket = os.getenv("GCS_AUDIO_BUCKET")
+        expires = int(os.getenv("GCS_SIGNED_URL_EXPIRATION_SECONDS", "3600"))
+        prefix = os.getenv("GCS_UPLOAD_PREFIX", "uploads")
+        project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        return cls(bucket, expires, prefix, project_id=project)
+
+    def _build_client(self):
+        # google cloud storage 클라이언트를 생성하거나 None을 반환
+        if storage is None or not self.bucket_name:
+            return None
+        return storage.Client(project=self.project_id)
+
+    def _build_object_path(self, request: PresignedUploadRequest) -> str:
+        # 안전한 object path 생성: prefix/device_id/file_name
+        safe_file_name = PurePosixPath(request.file_name).name or f"{request.sequence}.wav"
+        return str(PurePosixPath(self.object_prefix) / request.device_id / safe_file_name)
+
+    def issue_upload(self, request: PresignedUploadRequest) -> PresignedUploadResponse:
+        # 업로드 세션 ID 생성 및 서명 URL 반환 로직
+        upload_session_id = str(uuid4())
+        object_path = self._build_object_path(request)
+
+        # 스토리지 클라이언트가 준비되지 않았으면 dry-run URL 반환
+        if self.storage_client is None or not self.bucket_name:
+            return PresignedUploadResponse(
+                upload_url=f"https://storage.googleapis.com/{self.bucket_name or 'missing-bucket'}/{object_path}",
+                object_path=object_path,
+                upload_session_id=upload_session_id,
+                expires_in_seconds=self.url_expiration_seconds,
+            )
+
+        # 실제 GCS 서명 URL 생성
+        bucket = self.storage_client.bucket(self.bucket_name)
+        blob = bucket.blob(object_path)
+        upload_url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(seconds=self.url_expiration_seconds),
+            method="PUT",
+            content_type=request.content_type,
+        )
+
+        return PresignedUploadResponse(
+            upload_url=upload_url,
+            object_path=object_path,
+            upload_session_id=upload_session_id,
+            expires_in_seconds=self.url_expiration_seconds,
+        )
+
+    def response_dict(self, request: PresignedUploadRequest) -> dict[str, object]:
+        # dataclass(dict) 형태로 변환하여 FastAPI가 JSON으로 응답할 수 있게 함
+        return asdict(self.issue_upload(request))
+
+
+# ---------------------------------------------------------------------------
+# 라우트: presigned URL 발급
+# - 쿼리 파라미터로 요청을 받고, PresignedUrlService를 통해 결과 반환
+# ---------------------------------------------------------------------------
+
+
+@router.get("/presigned-url", response_model=PresignedUploadResponse)
+async def presigned_url(
+    device_id: str = Query(..., description="Device identifier."),
+    sequence: int = Query(..., description="Monotonic sequence number for the upload."),
+    timestamp_ms: int = Query(..., description="Client timestamp in milliseconds."),
+    file_name: str = Query(..., description="Desired file name for the upload object."),
+    content_type: str = Query(..., description="MIME type of the upload (e.g., audio/wav)."),
+    byte_length: int = Query(..., description="Expected byte length of the upload."),
+) -> dict[str, object]:
+    """Presigned URL을 발급합니다 (POC).
+
+    쿼리 파라미터로 업로드 요청 메타데이터를 받습니다. 실제 스토리지
+    자격증명이 구성되어 있지 않으면 테스트 가능한 URL을 반환합니다.
+    """
+
+    # 입력 검증: Pydantic 모델을 사용해 일관된 검증 수행
+    try:
+        request = PresignedUploadRequest(
+            device_id=device_id,
+            sequence=sequence,
+            timestamp_ms=timestamp_ms,
+            file_name=file_name,
+            content_type=content_type,
+            byte_length=byte_length,
+        )
+    except Exception as exc:  # pragma: no cover - validation
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    # 환경에서 설정을 읽어 서비스 인스턴스 생성 후 응답 반환
+    service = PresignedUrlService.from_env()
+    return service.response_dict(request)

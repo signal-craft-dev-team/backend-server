@@ -7,7 +7,7 @@ Background workers are created inside FastAPI's lifespan and cancelled on shutdo
 import logging
 from contextlib import asynccontextmanager
 import asyncio
-
+from typing import Any
 from fastapi import FastAPI
 
 

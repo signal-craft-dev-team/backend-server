@@ -44,18 +44,17 @@ description: "Task list for Boilerplate Implementation"
 
 **Goal**: Provide a presigned URL endpoint for clients (POC returns a dummy URL).
 
-- [ ] T013 [US2] Implement GET `/api/v1/presigned-url` in `apps/api_server/routers.py` (ensure router is exported)
+- [x] T013 [US2] Implement GET `/api/v1/presigned-url` in `apps/api_server/routers.py` (ensure router is exported)
 - [ ] T014 [US2] Add contract test: `tests/contract/test_presigned_url_contract.py` to validate response matches `specs/001-boilerplate-backend/contracts/presigned-url.md`
 - [ ] T015 [US2] Add integration test for endpoint: `tests/integration/test_presigned_url.py` asserting JSON contains keys `url` and `status` with `status == "ok"`
 
 ---
 
-## Phase 5: User Story 3 - Background MQTT worker lifecycle (Priority: P3)
+- ## Phase 5: User Story 3 - Background MQTT worker lifecycle (Priority: P3)
 
 **Goal**: Run an in-process MQTT-listener-style worker that is cancelled cleanly on shutdown.
 
-- [ ] T016 [US3] Implement `start_mqtt_loop()` in `apps/mqtt_worker/client.py` to run until cancelled and log lifecycle events
- - [x] T016 [US3] Implement `start_mqtt_loop()` in `apps/mqtt_worker/client.py` to run until cancelled and log lifecycle events
+- [x] T016 [US3] Implement `start_mqtt_loop()` in `apps/mqtt_worker/client.py` to run until cancelled and log lifecycle events
 - [ ] T017 [US3] Add asyncio-based integration test: `tests/integration/test_mqtt_worker_lifecycle.py` that starts `start_mqtt_loop()` as a task, cancels it, and asserts clean shutdown (use `pytest-asyncio`)
 - [ ] T018 [US3] Add worker README at `apps/mqtt_worker/README.md` describing expected behavior and configuration
 
