@@ -9,10 +9,10 @@ description: "Task list for Boilerplate Implementation"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Create package layout and placeholders: add `core/__init__.py`, `apps/__init__.py`, `apps/api_server/__init__.py`, `apps/mqtt_worker/__init__.py`
-- [ ] T002 Initialize runtime dependencies in `requirements.txt` (add `fastapi`, `uvicorn`)
-- [ ] T003 [P] Add development dependencies to `requirements-dev.txt` (add `pytest`, `pytest-asyncio`, `ruff`, `black`)
-- [ ] T004 Create Quickstart document at `specs/001-boilerplate-backend/quickstart.md`
+- [x] T001 Create package layout and placeholders: add `core/__init__.py`, `apps/__init__.py`, `apps/api_server/__init__.py`, `apps/mqtt_worker/__init__.py`
+- [x] T002 Initialize runtime dependencies in `requirements.txt` (add `fastapi`, `uvicorn`)
+- [x] T003 [P] Add development dependencies to `requirements-dev.txt` (add `pytest`, `pytest-asyncio`, `ruff`, `black`)
+- [x] T004 Create Quickstart document at `specs/001-boilerplate-backend/quickstart.md`
 
 ---
 
@@ -55,6 +55,7 @@ description: "Task list for Boilerplate Implementation"
 **Goal**: Run an in-process MQTT-listener-style worker that is cancelled cleanly on shutdown.
 
 - [ ] T016 [US3] Implement `start_mqtt_loop()` in `apps/mqtt_worker/client.py` to run until cancelled and log lifecycle events
+ - [x] T016 [US3] Implement `start_mqtt_loop()` in `apps/mqtt_worker/client.py` to run until cancelled and log lifecycle events
 - [ ] T017 [US3] Add asyncio-based integration test: `tests/integration/test_mqtt_worker_lifecycle.py` that starts `start_mqtt_loop()` as a task, cancels it, and asserts clean shutdown (use `pytest-asyncio`)
 - [ ] T018 [US3] Add worker README at `apps/mqtt_worker/README.md` describing expected behavior and configuration
 
