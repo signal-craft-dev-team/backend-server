@@ -32,7 +32,7 @@ do
             
             echo -e "${YELLOW}>> 2. 관심사 분리 (Sparse-checkout) 적용 중...${NC}"
             git sparse-checkout init --cone
-            git sparse-checkout set core apps/mqtt_worker .specify specs .github
+            git sparse-checkout set core apps/mqtt_worker .specify specs .github git-control.sh
             
             echo -e "${GREEN}✅ 세팅 완료! 탐색기에는 core와 mqtt_worker 폴더만 표시됩니다.${NC}"
             break
@@ -45,7 +45,7 @@ do
             
             echo -e "${YELLOW}>> 2. 관심사 분리 (Sparse-checkout) 적용 중...${NC}"
             git sparse-checkout init --cone
-            git sparse-checkout set core apps/api_server .specify specs .github
+            git sparse-checkout set core apps/api_server .specify specs .github git-control.sh
             
             echo -e "${GREEN}✅ 세팅 완료! 탐색기에는 core와 api_server 폴더만 표시됩니다.${NC}"
             break
