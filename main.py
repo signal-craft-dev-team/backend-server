@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
         logger.info("SHUTDOWN: application")
 
 
-app = FastAPI(lifespan=lifespan, title="SignalCraft Backend Server", version="1.0.0")
+app = FastAPI(lifespan=lifespan, title="SignalCraft Backend Server", version="1.0.1")
 
 
 @app.get("/health")

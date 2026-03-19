@@ -23,7 +23,7 @@ class CloudBackendSettings:
     google_cloud_project: str | None
     gcs_audio_bucket: str | None
     gcs_signed_url_expiration_seconds: int
-    gcs_upload_prefix: str
+    gcs_audio_prefix: str
     fastapi_host: str
     fastapi_port: int
     log_level: str
@@ -44,7 +44,7 @@ class CloudBackendSettings:
             google_cloud_project=getenv("GOOGLE_CLOUD_PROJECT") or None,
             gcs_audio_bucket=getenv("GCS_AUDIO_BUCKET") or None,
             gcs_signed_url_expiration_seconds=int(getenv("GCS_SIGNED_URL_EXPIRATION_SECONDS", "900")),
-            gcs_upload_prefix=getenv("GCS_UPLOAD_PREFIX", "raw-audio"),
+            gcs_audio_prefix=getenv("GCS_AUDIO_PREFIX", "raw-audio"),
             fastapi_host=getenv("FASTAPI_HOST", "0.0.0.0"),
             fastapi_port=int(getenv("FASTAPI_PORT", "8000")),
             log_level=getenv("LOG_LEVEL", "INFO"),
