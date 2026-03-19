@@ -1,0 +1,9 @@
+services:
+  backend:
+    image: ${GCP_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/${AR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}
+    container_name: backend-staging-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env

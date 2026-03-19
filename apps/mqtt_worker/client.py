@@ -146,7 +146,7 @@ class MqttConsumerWorker:
 
     def __init__(
         self,
-        repository: FirestoreRepository,
+        repository: Any,
         topic_pattern: str = "device/#",
         broker_host: str = "localhost",
         broker_port: int = 1883,
@@ -167,9 +167,7 @@ class MqttConsumerWorker:
         self._stop_event = asyncio.Event()
 
     @classmethod
-    def from_settings(
-        cls, settings: CloudBackendSettings, repository: FirestoreRepository
-    ) -> "MqttConsumerWorker":
+    def from_settings(cls, settings, repository) -> "MqttConsumerWorker":
         # 설정 객체로부터 Worker 인스턴스를 생성하는 헬퍼
         return cls(
             repository=repository,
@@ -269,6 +267,12 @@ async def start_mqtt_loop() -> None:
     """
     logger.info("MQTT worker: start_mqtt_loop starting")
 
+    settings = CloudBackendSettings.from_env()
+
+    if not settings.mqtt_consumer_enabled:
+        logger.info("MQTT consumer disabled by MQTT_CONSUMER_ENABLED=false; skipping start")
+        return
+
     # 저장소 초기화 시도: 실제 구현이 없으면 대체 구현 사용
     try:
         repo = FirestoreRepository()
@@ -285,7 +289,7 @@ async def start_mqtt_loop() -> None:
 
         repo = _DummyRepo()
 
-    worker = MqttConsumerWorker(repository=repo)
+    worker = MqttConsumerWorker.from_settings(settings, repository=repo)
 
     try:
         await worker.consume_forever()

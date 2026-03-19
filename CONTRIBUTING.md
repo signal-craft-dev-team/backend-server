@@ -114,6 +114,28 @@ alias 태그는 운영 편의용이며, 배포 대상의 정합성은 항상 불
 
 장기 운영과 보안 관점에서는 Workload Identity Federation 이 더 적합합니다.
 
+## Staging VM 자동 배포 입력값
+
+`dev` push 이후 staging VM으로 자동 반영하려면 GitHub Actions에서 아래 값들이 필요합니다.
+
+### Secrets
+
+- `GCP_WORKLOAD_IDENTITY_PROVIDER`
+- `GCP_SERVICE_ACCOUNT`
+- `STAGING_VM_HOST`
+- `STAGING_VM_USER`
+- `STAGING_VM_SSH_KEY`
+- `STAGING_VM_SSH_PORT` (선택)
+
+### Variables
+
+- `GOOGLE_CLOUD_PROJECT`
+- `GCP_REGION`
+- `AR_REPOSITORY`
+- `IMAGE_NAME`
+- `DEV_VERSION`
+- `STAGING_DEPLOY_DIR` (선택, 기본값 `/opt/backend-staging`)
+
 ## 결론
 
 이 저장소의 태그 전략은 다음 한 줄로 요약할 수 있습니다.
