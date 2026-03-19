@@ -275,7 +275,7 @@ async def start_mqtt_loop() -> None:
 
     # 저장소 초기화 시도: 실제 구현이 없으면 대체 구현 사용
     try:
-        repo = FirestoreRepository()
+        repo = FirestoreRepository.from_settings(settings)
     except Exception:
         logger.info("FirestoreRepository not available; using fallback dummy repository")
 
