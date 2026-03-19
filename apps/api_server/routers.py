@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import os
-from dataclasses import asdict
 from datetime import timedelta
 from pathlib import PurePosixPath
 from uuid import uuid4
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 try:
@@ -124,44 +123,23 @@ class PresignedUrlService:
         )
 
     def response_dict(self, request: PresignedUploadRequest) -> dict[str, object]:
-        # dataclass(dict) 형태로 변환하여 FastAPI가 JSON으로 응답할 수 있게 함
-        return asdict(self.issue_upload(request))
+        return self.issue_upload(request).model_dump()
 
 
 # ---------------------------------------------------------------------------
 # 라우트: presigned URL 발급
-# - 쿼리 파라미터로 요청을 받고, PresignedUrlService를 통해 결과 반환
+# - JSON body로 요청을 받고, PresignedUrlService를 통해 결과 반환
 # ---------------------------------------------------------------------------
 
 
-@router.get("/presigned-url", response_model=PresignedUploadResponse)
-async def presigned_url(
-    device_id: str = Query(..., description="Device identifier."),
-    sequence: int = Query(..., description="Monotonic sequence number for the upload."),
-    timestamp_ms: int = Query(..., description="Client timestamp in milliseconds."),
-    file_name: str = Query(..., description="Desired file name for the upload object."),
-    content_type: str = Query(..., description="MIME type of the upload (e.g., audio/wav)."),
-    byte_length: int = Query(..., description="Expected byte length of the upload."),
-) -> dict[str, object]:
+@router.post("/uploads/presign", response_model=PresignedUploadResponse)
+async def issue_presigned_upload(request_body: PresignedUploadRequest) -> PresignedUploadResponse:
     """Presigned URL을 발급합니다 (POC).
 
-    쿼리 파라미터로 업로드 요청 메타데이터를 받습니다. 실제 스토리지
+    요청 본문으로 업로드 요청 메타데이터를 받습니다. 실제 스토리지
     자격증명이 구성되어 있지 않으면 테스트 가능한 URL을 반환합니다.
     """
 
-    # 입력 검증: Pydantic 모델을 사용해 일관된 검증 수행
-    try:
-        request = PresignedUploadRequest(
-            device_id=device_id,
-            sequence=sequence,
-            timestamp_ms=timestamp_ms,
-            file_name=file_name,
-            content_type=content_type,
-            byte_length=byte_length,
-        )
-    except Exception as exc:  # pragma: no cover - validation
-        raise HTTPException(status_code=400, detail=str(exc))
-
     # 환경에서 설정을 읽어 서비스 인스턴스 생성 후 응답 반환
     service = PresignedUrlService.from_env()
-    return service.response_dict(request)
+    return service.issue_upload(request_body)

@@ -25,7 +25,16 @@ uvicorn main:app --reload
 
 ```bash
 curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/api/v1/presigned-url
+curl -X POST http://127.0.0.1:8000/api/v1/uploads/presign \
+	-H 'Content-Type: application/json' \
+	-d '{
+		"device_id": "device-001",
+		"sequence": 1,
+		"timestamp_ms": 1710840000000,
+		"file_name": "sample.wav",
+		"content_type": "audio/wav",
+		"byte_length": 123456
+	}'
 ```
 
 5. Sparse-checkout validation:

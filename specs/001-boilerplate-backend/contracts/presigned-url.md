@@ -1,14 +1,14 @@
-# Contract: GET /api/v1/presigned-url
+# Contract: POST /api/v1/uploads/presign
 
-**Endpoint**: `GET /api/v1/presigned-url`
+**Endpoint**: `POST /api/v1/uploads/presign`
 
 **Description**: Returns a presigned URL for client uploads (POC returns a dummy URL).
 
 **Request**:
 
-- Method: GET
-- Path: `/api/v1/presigned-url`
-- Query params: none
+- Method: POST
+- Path: `/api/v1/uploads/presign`
+- Body: JSON object with `device_id`, `sequence`, `timestamp_ms`, `file_name`, `content_type`, `byte_length`
 - Auth: none (POC)
 
 **Response (200)**:
