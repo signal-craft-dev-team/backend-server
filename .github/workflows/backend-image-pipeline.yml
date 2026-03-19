@@ -62,6 +62,9 @@ jobs:
     name: Build and push dev image
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_base: ${{ steps.meta.outputs.image_base }}
 
     steps:
       - name: Checkout
@@ -75,7 +78,7 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Set up gcloud      attribute.repository == "signal-craft-dev-team/backend-server"
+      - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for Artifact Registry
@@ -87,8 +90,10 @@ jobs:
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
           DEV_VERSION="${{ vars.DEV_VERSION || '0.0.1' }}"
+          IMAGE_TAG="dev-${DEV_VERSION}-${SHORT_SHA}"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "dev_version=${DEV_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
           echo "image_base=${GCP_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/${AR_REPOSITORY}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
@@ -96,16 +101,56 @@ jobs:
           IMAGE_BASE="${{ steps.meta.outputs.image_base }}"
           SHORT_SHA="${{ steps.meta.outputs.short_sha }}"
           DEV_VERSION="${{ steps.meta.outputs.dev_version }}"
+          IMAGE_TAG="${{ steps.meta.outputs.image_tag }}"
 
           docker buildx create --use
           docker buildx build \
             --push \
             --platform linux/amd64 \
             -t "${IMAGE_BASE}:dev-${DEV_VERSION}" \
-            -t "${IMAGE_BASE}:dev-${DEV_VERSION}-${SHORT_SHA}" \
+            -t "${IMAGE_BASE}:${IMAGE_TAG}" \
             -t "${IMAGE_BASE}:sha-${SHORT_SHA}" \
             -t "${IMAGE_BASE}:dev-latest" \
             .
+
+  deploy_staging:
+    name: Deploy dev image to staging VM
+    runs-on: ubuntu-latest
+    needs: build_and_push_dev
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_VM_HOST }}
+          username: ${{ secrets.STAGING_VM_USER }}
+          key: ${{ secrets.STAGING_VM_SSH_KEY }}
+          port: ${{ secrets.STAGING_VM_SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            DEPLOY_DIR="${{ vars.STAGING_DEPLOY_DIR }}"
+            if [ -z "$DEPLOY_DIR" ]; then
+              DEPLOY_DIR="/opt/backend-staging"
+            fi
+
+            cd "$DEPLOY_DIR"
+
+            if [ ! -f .env ]; then
+              echo ".env not found in ${DEPLOY_DIR}"
+              exit 1
+            fi
+
+            if grep -q '^IMAGE_TAG=' .env; then
+              sed -i.bak "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ needs.build_and_push_dev.outputs.image_tag }}/" .env
+            else
+              echo "IMAGE_TAG=${{ needs.build_and_push_dev.outputs.image_tag }}" >> .env
+            fi
+
+            docker compose pull
+            docker compose up -d
 
   promote_to_main:
     name: Promote dev image to main
