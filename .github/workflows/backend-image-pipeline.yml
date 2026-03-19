@@ -21,7 +21,7 @@ on:
 
 env:
   # Update these values for your GCP project and Artifact Registry location.
-  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
   GCP_REGION: ${{ vars.GCP_REGION }}
   AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
@@ -72,10 +72,10 @@ jobs:
         with:
           # Preferred approach: Workload Identity Federation.
           # Replace with your GitHub OIDC provider resource name.
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Set up gcloud
+      - name: Set up gcloud      attribute.repository == "signal-craft-dev-team/backend-server"
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for Artifact Registry
@@ -89,7 +89,7 @@ jobs:
           DEV_VERSION="${{ vars.DEV_VERSION || '0.0.1' }}"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "dev_version=${DEV_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "image_base=${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "image_base=${GCP_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/${AR_REPOSITORY}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         run: |
@@ -117,8 +117,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           # Preferred approach: Workload Identity Federation.
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -132,7 +132,7 @@ jobs:
           SOURCE_TAG: ${{ inputs.source_tag }}
           RELEASE_VERSION: ${{ inputs.release_version }}
         run: |
-          IMAGE_BASE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}"
+          IMAGE_BASE="${GCP_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/${AR_REPOSITORY}/${IMAGE_NAME}"
           SOURCE_IMAGE="${IMAGE_BASE}:${SOURCE_TAG}"
           SHORT_SHA="${SOURCE_TAG##*-}"
 

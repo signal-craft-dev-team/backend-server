@@ -11,6 +11,8 @@
 
 배포는 GitHub Actions에서 이미지를 빌드하고, GCP Artifact Registry로 push한 뒤, VM에서 pull 및 재시작하는 흐름을 기준으로 합니다.
 
+이 저장소의 공통 환경변수 이름은 `.env.example` 를 기준으로 맞추며, 대표적으로 `GOOGLE_CLOUD_PROJECT`, `GCS_AUDIO_BUCKET`, `GCS_AUDIO_PREFIX`, `MQTT_*` 계열을 사용합니다.
+
 ## 핵심 원칙
 
 1. 배포 기준은 가변 태그가 아니라 **불변 태그**를 우선한다.
