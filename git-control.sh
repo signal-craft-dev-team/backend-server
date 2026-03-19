@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # --- 색상 설정 (터미널에서 예쁘게 보이도록) ---
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -32,7 +34,7 @@ do
             
             echo -e "${YELLOW}>> 2. 관심사 분리 (Sparse-checkout) 적용 중...${NC}"
             git sparse-checkout init --cone
-            git sparse-checkout set core apps/mqtt_worker .specify specs .github git-control.sh
+            git sparse-checkout set core apps/mqtt_worker .specify specs .github
             
             echo -e "${GREEN}✅ 세팅 완료! 탐색기에는 core와 mqtt_worker 폴더만 표시됩니다.${NC}"
             break
@@ -45,7 +47,7 @@ do
             
             echo -e "${YELLOW}>> 2. 관심사 분리 (Sparse-checkout) 적용 중...${NC}"
             git sparse-checkout init --cone
-            git sparse-checkout set core apps/api_server .specify specs .github git-control.sh
+            git sparse-checkout set core apps/api_server .specify specs .github
             
             echo -e "${GREEN}✅ 세팅 완료! 탐색기에는 core와 api_server 폴더만 표시됩니다.${NC}"
             break
