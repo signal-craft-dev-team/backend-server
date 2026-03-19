@@ -13,6 +13,11 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     storage = None  # type: ignore[assignment]
 
+try:
+    from google.auth.exceptions import DefaultCredentialsError
+except ImportError:  # pragma: no cover - optional dependency
+    DefaultCredentialsError = Exception  # type: ignore[assignment]
+
 
 # APIRouter 인스턴스 생성: 이 모듈의 라우트를 묶는 역할
 router = APIRouter()
@@ -84,7 +89,12 @@ class PresignedUrlService:
         # google cloud storage 클라이언트를 생성하거나 None을 반환
         if storage is None or not self.bucket_name:
             return None
-        return storage.Client(project=self.project_id)
+        try:
+            return storage.Client(project=self.project_id)
+        except DefaultCredentialsError:
+            return None
+        except Exception:
+            return None
 
     def _build_object_path(self, request: PresignedUploadRequest) -> str:
         # 안전한 object path 생성: prefix/device_id/file_name
