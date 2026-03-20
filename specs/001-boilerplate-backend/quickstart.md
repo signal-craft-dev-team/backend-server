@@ -28,14 +28,17 @@ curl http://127.0.0.1:8000/health
 curl -X POST http://127.0.0.1:8000/api/v1/uploads/presign \
 	-H 'Content-Type: application/json' \
 	-d '{
-		"device_id": "device-001",
+		"device_id": "DCB4D91BAD48",
 		"sequence": 1,
 		"timestamp_ms": 1710840000000,
-		"file_name": "sample.wav",
+		"file_name": "device_DCB4D91BAD48_03E771F4B2B77CCA_seq_1.wav",
 		"content_type": "audio/wav",
 		"byte_length": 123456
 	}'
 ```
+
+The resulting object path should follow the device layout:
+`gs://device-raw-data/raw-audio/DCB4D91BAD48/device_DCB4D91BAD48_03E771F4B2B77CCA_seq_1.wav`
 
 5. Sparse-checkout validation:
 
