@@ -94,7 +94,7 @@ class PresignedUrlService:
         # 환경변수에서 설정을 읽어 서비스 인스턴스 생성
         bucket = os.getenv("GCS_AUDIO_BUCKET")
         expires = int(os.getenv("GCS_SIGNED_URL_EXPIRATION_SECONDS", "3600"))
-        prefix = os.getenv("GCS_UPLOAD_PREFIX", "uploads")
+        prefix = os.getenv("GCS_AUDIO_PREFIX") or os.getenv("GCS_UPLOAD_PREFIX") or "raw-audio"
         project = os.getenv("GOOGLE_CLOUD_PROJECT")
         return cls(bucket, expires, prefix, project_id=project)
 
